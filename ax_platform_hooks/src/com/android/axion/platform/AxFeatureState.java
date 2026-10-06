@@ -34,6 +34,10 @@ public final class AxFeatureState {
     public static final String KEY_SECONDARY_LABEL = "secondaryLabel";
     public static final String KEY_RINGER_MODE = "ringerMode";
     public static final String KEY_HAS_VIBRATOR = "hasVibrator";
+    public static final String KEY_BT_BATTERY_LEFT = "bt_battery_left";
+    public static final String KEY_BT_BATTERY_RIGHT = "bt_battery_right";
+    public static final String KEY_BT_BATTERY_CASE = "bt_battery_case";
+    public static final String KEY_BT_DEVICE_ICON_URI = "bt_device_icon_uri";
 
     public static final int TILE_STATE_UNAVAILABLE = 0;
     public static final int TILE_STATE_INACTIVE = 1;
@@ -129,6 +133,23 @@ public final class AxFeatureState {
 
     public boolean hasVibrator() {
         return mBundle.getBoolean(KEY_HAS_VIBRATOR, true);
+    }
+
+    public int getBtBatteryLeft(int fallback) {
+        return mBundle.getInt(KEY_BT_BATTERY_LEFT, fallback);
+    }
+
+    public int getBtBatteryRight(int fallback) {
+        return mBundle.getInt(KEY_BT_BATTERY_RIGHT, fallback);
+    }
+
+    public int getBtBatteryCase(int fallback) {
+        return mBundle.getInt(KEY_BT_BATTERY_CASE, fallback);
+    }
+
+    @Nullable
+    public String getBtDeviceIconUri() {
+        return mBundle.getString(KEY_BT_DEVICE_ICON_URI);
     }
 
     public boolean containsKey(@NonNull String key) {

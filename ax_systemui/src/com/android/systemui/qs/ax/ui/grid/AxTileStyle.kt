@@ -22,6 +22,7 @@ import android.graphics.drawable.Drawable
 import android.service.quicksettings.Tile.STATE_ACTIVE
 import android.service.quicksettings.Tile.STATE_INACTIVE
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,15 +43,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.android.compose.modifiers.thenIf
+import com.android.compose.ui.graphics.painter.rememberDrawablePainter
 import com.android.systemui.Flags
 import com.android.systemui.common.shared.model.Icon
 import com.android.systemui.qs.ax.shared.model.AxQsSpan
@@ -116,6 +124,101 @@ fun AxLargeTileContent(
             label = "AxLargeTileChipIconColor",
         )
 
+    val context = LocalContext.current
+    val resolvedIcon = remember(iconProvider, context) { iconProvider(context) }
+    val isDeviceRender = resolvedIcon is Icon.Loaded && (
+        resolvedIcon.drawable is android.graphics.drawable.BitmapDrawable ||
+        resolvedIcon.drawable is com.android.settingslib.widget.AdaptiveOutlineDrawable ||
+        resolvedIcon.drawable is android.graphics.drawable.DrawableWrapper
+    )
+
+    if (span.rows == 2 && isDeviceRender) {
+        val clickableTileModifier =
+            if (toggleClick != null) {
+                Modifier.combinedClickable(
+                    onClick = toggleClick,
+                    onLongClick = onLongClick,
+                    onLongClickLabel = longPressLabel,
+                    hapticFeedbackEnabled = !Flags.msdlFeedback(),
+                    interactionSource = interactionSource,
+                )
+            } else {
+                Modifier
+            }
+
+        Column(
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
+                    .then(clickableTileModifier),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(66.dp)
+                        .padding(top = 4.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = rememberDrawablePainter(resolvedIcon.drawable),
+                    contentDescription = label,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(width = 96.dp, height = 62.dp),
+                )
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.label,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+                if (!secondaryLabel.isNullOrBlank()) {
+                    Text(
+                        text = secondaryLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.secondaryLabel,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 2.dp),
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(5.dp)
+                            .background(colors.label, CircleShape)
+                )
+                Box(
+                    modifier =
+                        Modifier
+                            .size(5.dp)
+                            .background(colors.secondaryLabel.copy(alpha = 0.35f), CircleShape)
+                )
+            }
+        }
+        return
+    }
+
     if (span.rows == 1) {
         val clickableIconModifier =
             if (toggleClick != null) {
@@ -141,7 +244,7 @@ fun AxLargeTileContent(
             Box(
                 modifier =
                     Modifier.size(cellConfig.iconContainerSize)
-                        .background(chipColor, CircleShape)
+                        .background(if (isDeviceRender) Color.Transparent else chipColor, CircleShape)
                         .thenIf(isDualTarget) {
                             Modifier.borderOnFocus(color = focusBorderColor, CircleShape.topEnd)
                         }
@@ -150,8 +253,8 @@ fun AxLargeTileContent(
             ) {
                 SmallTileContent(
                     iconProvider = iconProvider,
-                    color = chipIconColor,
-                    size = { cellConfig.iconSize },
+                    color = if (isDeviceRender) Color.Unspecified else chipIconColor,
+                    size = { if (isDeviceRender) 36.dp else cellConfig.iconSize },
                 )
             }
 
